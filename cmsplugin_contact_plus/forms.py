@@ -1,10 +1,9 @@
 from django.utils.http import urlquote
 from django import forms
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.contrib.sites.models import Site
 from django.template.defaultfilters import slugify
-from django.utils.text import get_valid_filename
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
@@ -35,7 +34,7 @@ class ContactFormPlus(forms.Form):
                 elif extraField.fieldType == 'EmailField':
                     self.fields[slugify(extraField.label)] = forms.EmailField(label=extraField.label,
                             initial=extraField.initial,
-                            widget=forms.EmailInput(
+                            widget=forms.TextInput(
                                 attrs={'placeholder': extraField.placeholder}
                             ),
                             required=extraField.required)
@@ -64,7 +63,7 @@ class ContactFormPlus(forms.Form):
                 elif extraField.fieldType == 'IntegerField':
                     self.fields[slugify(extraField.label)] = forms.IntegerField(label=extraField.label,
                             initial=extraField.initial,
-                            widget=forms.NumberInput(
+                            widget=forms.TextInput(
                                 attrs={'placeholder': extraField.placeholder}
                             ),
                             required=extraField.required)
@@ -144,7 +143,7 @@ class ContactFormPlus(forms.Form):
                 value = self.cleaned_data.get(key, '(no input)')
                 # redefine value for files... 
                 if field.fieldType in ["FileField", "ImageField"]:
-                    val = ts + '-' + get_valid_filename(value)
+                    val = ts + '-' + str(value)
                     if settings.MEDIA_URL.startswith("http"):
                         value = "%s%s" % (settings.MEDIA_URL, val)
                     else:
@@ -170,7 +169,7 @@ class ContactFormPlus(forms.Form):
         except:
             pass
 
-        email_message = EmailMultiAlternatives(
+        email_message = EmailMessage(
             subject=instance.email_subject,
             body=render_to_string("cmsplugin_contact_plus/email.txt", {'data': self.cleaned_data,
                                                                       'ordered_data': ordered_dic_list,
@@ -181,12 +180,6 @@ class ContactFormPlus(forms.Form):
             to=[recipient_email, ],
             headers=tmp_headers,
         )
-        if getattr(settings, 'CONTACT_PLUS_SEND_HTML_EMAIL', False):
-            html_content = render_to_string("cmsplugin_contact_plus/email.html", {'data': self.cleaned_data,
-                                                                      'ordered_data': ordered_dic_list,
-                                                                      'instance': instance,
-                                                                      })
-            email_message.attach_alternative(html_content, "text/html")
         email_message.send(fail_silently=True)
 
         if instance.collect_records:# and not multipart:

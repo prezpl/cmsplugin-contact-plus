@@ -1,5 +1,4 @@
 from django.utils.translation import ugettext_lazy as _
-from django.utils.text import get_valid_filename
 from django.conf import settings
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
@@ -7,12 +6,12 @@ from cms.plugin_pool import plugin_pool
 from cmsplugin_contact_plus.admin import ExtraFieldInline
 from cmsplugin_contact_plus.models import ContactPlus
 from cmsplugin_contact_plus.forms import ContactFormPlus
-
+from django.shortcuts import redirect
 
 import time
 
 def handle_uploaded_file(f, ts):    
-    destination = open('%s/%s' % (settings.MEDIA_ROOT, ts + '-' + get_valid_filename(f.name)), 'wb+')
+    destination = open('%s/%s' % (settings.MEDIA_ROOT, ts + '-' + f.name), 'wb+')
 
     for chunk in f.chunks():
         destination.write(chunk)

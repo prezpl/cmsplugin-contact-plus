@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.sites.models import Site
-from django.utils.encoding import python_2_unicode_compatible
+from six import python_2_unicode_compatible
 from django.db.models import Model
 
 from cms.models import CMSPlugin
@@ -11,16 +11,10 @@ from jsonfield import JSONField
 
 from cmsplugin_contact_plus import local_settings
 
-
-def get_default_from_email_address():
-    email_address = ''
-    try:
-        email_address = settings.ADMINS[0][1]
-    except:
-        pass
-
-    return email_address
-
+try:
+    DEFAULT_FROM_EMAIL_ADDRESS = settings.ADMINS[0][1]
+except:
+    DEFAULT_FROM_EMAIL_ADDRESS = ''
 
 def get_current_site():
     try:
@@ -28,46 +22,44 @@ def get_current_site():
     except:
         current_site = 'example.com'
     return _('Contact form message from {}').format(current_site)
-
-
 @python_2_unicode_compatible
 class ContactPlus(CMSPlugin):
-    title = models.CharField(_('Title'),
-            null=True,
-            blank=True,
-            max_length=100,
+    title = models.CharField(_('Title'), 
+            null=True, 
+            blank=True, 
+            max_length=100, 
             help_text=_("Title for the Contact Form."))
     email_subject = models.CharField(
-            max_length=256,
+            max_length=256, 
             verbose_name=_("Email subject"),
             default=get_current_site)
-    recipient_email = models.EmailField(_("Email of recipients"),
-            default=get_default_from_email_address,
+    recipient_email = models.EmailField(_("Email of recipients"), 
+            default=DEFAULT_FROM_EMAIL_ADDRESS,
             max_length=254)
-    collect_records = models.BooleanField(_('Collect Records'),
-            default=True,
+    collect_records = models.BooleanField(_('Collect Records'), 
+            default=True, 
             help_text=_("If active, all records for this Form will be stored in the Database."))
     thanks = models.TextField(_('Message displayed after submitting the contact form.'))
     submit_button_text = models.CharField(_('Text for the Submit button.'),
-            blank=True,
+            blank=True, 
             max_length=30)
     template = models.CharField(
             max_length=255,
             choices=local_settings.CMSPLUGIN_CONTACT_PLUS_TEMPLATES,
             default='cmsplugin_contact_plus/contact.html',
             editable=len(local_settings.CMSPLUGIN_CONTACT_PLUS_TEMPLATES) > 1)
-
+            
     class Meta:
         verbose_name = "Contact Plus Form"
         verbose_name_plural = "Contact Plus Forms"
-
+            
     def copy_relations(self, oldinstance):
         for extrafield in ExtraField.objects.filter(form__pk=oldinstance.pk):
             extrafield.pk = None
             extrafield.save()
             self.extrafield_set.add(
                 extrafield)
-
+                
     def __str__(self):
         if self.title:
             return self.title
@@ -104,7 +96,7 @@ if recaptcha_installed():
 class ExtraField(SortableMixin):
     """
     """
-    form = models.ForeignKey(ContactPlus, verbose_name=_("Contact Form"))
+    form = models.ForeignKey(ContactPlus, verbose_name=_("Contact Form"), on_delete=models.CASCADE)
     label = models.CharField(_('Label'), max_length=100)
     fieldType = models.CharField(max_length=100, choices=FIELD_TYPE)
     initial = models.CharField(
@@ -148,5 +140,6 @@ class ContactRecord(Model):
             return False
 
     def __str__(self):
-        return _(u"Record for %(contact)s recorded on %(date)s") % {'contact':self.contact_form,
+        return _(u"Record for %(contact)s recorded on %(date)s") % {'contact':self.contact_form, 
                                                                    'date': self.date_of_entry.strftime('%d. %b %Y') }
+ 
