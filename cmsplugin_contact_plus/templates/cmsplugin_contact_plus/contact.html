@@ -4,7 +4,7 @@
     {% if form.is_multipart %}
         <form enctype="multipart/form-data" method="POST" action="">
     {% else %}
-       <form method="POST" action="">
+       <form method="POST" action="" class="form-control">
     {% endif %}
 	{% csrf_token %}
 		{{ form.as_p }}
